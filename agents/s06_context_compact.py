@@ -64,6 +64,118 @@ def estimate_tokens(messages: list) -> int:
     """Rough token count: ~4 chars per token."""
     return len(str(messages)) // 4
 
+"""
+messages = [
+    # 1. 用户初始请求
+    {
+        "role": "user",
+        "content": "帮我分析一下当前目录下的 main.py 并搜索最新的 Python 3.12 特性。"
+    },
+
+    # 2. AI 决定调用两个工具：read_file 和 search_web
+    {
+        "role": "assistant",
+        "content": [
+            {
+                "type": "text",
+                "text": "好的，我先读取文件，然后搜索特性。"
+            },
+            {
+                "type": "tool_use",
+                "id": "toolu_001",
+                "name": "read_file",
+                "input": {"path": "main.py"}
+            },
+            {
+                "type": "tool_use",
+                "id": "toolu_002",
+                "name": "search_web",
+                "input": {"query": "Python 3.12 new features"}
+            }
+        ]
+    },
+
+    # 3. 用户消息携带工具结果 (这是第1、2个工具结果)
+    {
+        "role": "user",
+        "content": [
+            {
+                "type": "tool_result",
+                "tool_use_id": "toolu_001",
+                # 这是一个很长的文件内容，但因为它是 read_file，所以应该被 PRESERVE
+                "content": "def main():\n    print('Hello World')\n" + ("# comment line\n" * 50)
+            },
+            {
+                "type": "tool_result",
+                "tool_use_id": "toolu_002",
+                # 这是一个很长的搜索结果，应该被压缩
+                "content": "Here are the results from Google: 1. PEP 701... 2. F-string improvements... " + (
+                            "More text... " * 50)
+            }
+        ]
+    },
+
+    # 4. AI 继续对话，又调用了一个计算工具
+    {
+        "role": "assistant",
+        "content": [
+            {
+                "type": "text",
+                "text": "文件读完了，网页也搜到了。现在我算一下行数。"
+            },
+            {
+                "type": "tool_use",
+                "id": "toolu_003",
+                "name": "calculate",
+                "input": {"expr": "50 + 10"}
+            }
+        ]
+    },
+
+    # 5. 用户消息携带第3个工具结果
+    {
+        "role": "user",
+        "content": [
+            {
+                "type": "tool_result",
+                "tool_use_id": "toolu_003",
+                "content": "60"  # 内容很短，即使不是 preserve 工具，也可能因为长度<=100而被跳过压缩逻辑
+            }
+        ]
+    },
+
+    # 6. AI 再次调用工具 (第4个)
+    {
+        "role": "assistant",
+        "content": [
+            {
+                "type": "tool_use",
+                "id": "toolu_004",
+                "name": "search_web",
+                "input": {"query": "Python performance tips"}
+            }
+        ]
+    },
+
+    # 7. 用户消息携带第4个工具结果
+    {
+        "role": "user",
+        "content": [
+            {
+                "type": "tool_result",
+                "tool_use_id": "toolu_004",
+                "content": "Result 1: Use slots. Result 2: Avoid global variables. " + ("Extra data... " * 40)
+            }
+        ]
+    },
+
+    # 8. 最后一条普通用户消息，触发压缩检查
+    {
+        "role": "user",
+        "content": "总结一下。"
+    }
+]
+"""
 
 # -- Layer 1: micro_compact - replace old tool results with placeholders --
 def micro_compact(messages: list) -> list:
