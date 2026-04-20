@@ -72,7 +72,7 @@ def micro_compact(messages: list) -> list:
     for msg_idx, msg in enumerate(messages):
         if msg["role"] == "user" and isinstance(msg.get("content"), list):
             for part_idx, part in enumerate(msg["content"]):
-                if isinstance(part, dict) and part.get("type") == "tool_result":
+                if isinstance(part, dict) and part.get("type") == "tool_result":  # find tool_result in user messages
                     tool_results.append((msg_idx, part_idx, part))
     if len(tool_results) <= KEEP_RECENT:
         return messages
@@ -83,7 +83,7 @@ def micro_compact(messages: list) -> list:
             content = msg.get("content", [])
             if isinstance(content, list):
                 for block in content:
-                    if hasattr(block, "type") and block.type == "tool_use":
+                    if hasattr(block, "type") and block.type == "tool_use": # find tool_use in assistant messages
                         tool_name_map[block.id] = block.name
     # Clear old results (keep last KEEP_RECENT). Preserve read_file outputs because
     # they are reference material; compacting them forces the agent to re-read files.
